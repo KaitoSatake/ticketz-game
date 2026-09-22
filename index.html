@@ -2,130 +2,67 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
 <title>整理券ゲーム</title>
 <style>
 *{box-sizing:border-box}
-html,body{
-  margin:0;
-  height:100%;
-  overscroll-behavior-y:none;
-  overflow:hidden;
-  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
-  background:#efefef;
-}
-#scroll{
-  height:calc(100vh - 64px);
-  overflow-y:auto;
-  -webkit-overflow-scrolling:touch;
-  overscroll-behavior:contain;
-  touch-action:pan-y;
-}
-#pull{height:0;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;background:#fff;transition:height .15s}
+html,body{margin:0;height:100%;overflow:hidden;background:#efefef;font-family:-apple-system,BlinkMacSystemFont,sans-serif;overscroll-behavior-y:none}
+.app{max-width:390px;height:100vh;margin:0 auto;background:#efefef;display:flex;flex-direction:column}
+.status{background:#fff;padding:14px 18px 6px;display:flex;justify-content:space-between;font-size:14px;font-weight:700}
+.head{background:#fff;text-align:center;padding:10px 0 14px;font-size:22px;font-weight:800;border-bottom:1px solid #eee}
+#scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+#pull{height:0;overflow:hidden;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;transition:.15s}
 #spinner{width:28px;height:28px;border:3px solid #d1d5db;border-top-color:#374151;border-radius:50%}
-.spin{animation:spin .8s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.card{background:#fff;border-radius:16px;padding:16px;margin:16px}
-button{width:100%;padding:13px;border:none;border-radius:12px;font-weight:700}
+.spin{animation:r .8s linear infinite}@keyframes r{to{transform:rotate(360deg)}}
+.empty{background:#fff;padding:34px;text-align:center;color:#666}
+.card{background:#fff;border-radius:18px;padding:14px;margin:16px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.logo{width:56px;height:56px;border-radius:50%;background:#F6E27A;display:flex;align-items:center;justify-content:center;font-weight:900}
+.ticket{margin-top:12px;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden}
+.state{background:#e5e7eb;color:#111;text-align:center;padding:10px;font-weight:800}
+.line{display:flex;justify-content:space-between;align-items:center;padding:14px}
+.badge{background:#e5e7eb;padding:4px 8px;border-radius:6px;font-size:12px;font-weight:700}
+button{border:none;border-radius:12px;font-weight:700}
+.primary{width:100%;background:#2563eb;color:#fff;padding:13px}
+.issue{margin:0 14px 14px;width:calc(100% - 28px);padding:12px;background:#d1d5db;color:#fff}
 </style>
 </head>
 <body>
-<div style="background:#fff;padding:14px 18px 10px;font-weight:700">整理券</div>
-
-<div id="scroll">
-  <div id="pull">
-    <div id="spinner"></div>
-    <div id="label" style="font-size:11px;color:#888;margin:6px 0 8px">↓ 下に引っ張って更新</div>
+<div class="app">
+  <div class="status"><span>20:59</span><span>📶 4G 🔋85</span></div>
+  <div class="head">整理券</div>
+  <div id="scroll">
+    <div id="pull">
+      <div id="spinner"></div>
+      <div id="label" style="font-size:11px;color:#888;margin:4px 0 8px">↓ 下に引っ張って更新</div>
+    </div>
+    <div class="empty">整理券がありません</div>
+    <div class="card">
+      <button id="start" class="primary">▶ ゲーム開始（10秒）</button>
+      <div style="display:flex;gap:12px;align-items:center;margin-top:16px">
+        <div class="logo">FZ</div>
+        <div><div style="font-weight:800">FRUITS ZIPPER</div><div style="font-size:13px">7thシングル リリイベ</div></div>
+      </div>
+      <div style="margin-top:14px;font-size:12px;color:#666">2026.09.27</div>
+      <div style="font-weight:800">セブンパークアリオ柏</div>
+      <div class="ticket">
+        <div id="state" class="state">受付前</div>
+        <div class="line">
+          <div><div style="font-weight:700">先着配布</div><div id="sub" style="font-size:12px;color:#666">ゲーム開始待ち</div></div>
+          <div class="badge">先着</div>
+        </div>
+        <button id="issue" class="issue" disabled>先着配布</button>
+      </div>
+    </div>
   </div>
-
-  <div class="card">
-    <button id="start" style="background:#2563eb;color:#fff">ゲーム開始（10秒）</button>
-    <div style="margin-top:16px;font-weight:700">FRUITS ZIPPER</div>
-    <div id="state" style="margin-top:12px;background:#e5e7eb;padding:10px;border-radius:10px;text-align:center;font-weight:700">受付前</div>
-    <div id="sub" style="margin-top:8px;font-size:12px;color:#666">ゲーム開始待ち</div>
-    <button id="issue" disabled style="margin-top:12px;background:#d1d5db;color:#fff">先着配布</button>
-  </div>
-
-  <div style="height:500px"></div>
 </div>
-
 <script>
+let started=false,ready=false,startY=0,pulling=false,dist=0;
 const WAIT=10;
-let ready=false,started=false,startY=0,pulling=false,dist=0,startTime=0;
-const scroll=document.getElementById('scroll');
-
-document.getElementById('start').onclick=()=>{
-  if(started)return;
-  started=true;
-  startTime=Date.now();
-  tick();
-};
-
-function tick(){
-  const t=(Date.now()-startTime)/1000;
-  if(t<WAIT){
-    document.getElementById('sub').textContent=`受付開始まで ${(WAIT-t).toFixed(1)} 秒`;
-    requestAnimationFrame(tick);
-    return;
-  }
-  ready=true;
-  document.getElementById('sub').textContent='下に引っ張って更新';
-}
-
-scroll.addEventListener('touchstart',e=>{
-  if(scroll.scrollTop===0){
-    pulling=true;
-    startY=e.touches[0].clientY;
-  }
-},{passive:true});
-
-scroll.addEventListener('touchmove',e=>{
-  if(!pulling)return;
-  dist=Math.max(0,e.touches[0].clientY-startY);
-
-  if(scroll.scrollTop===0 && dist>0){
-    e.preventDefault();
-  }
-
-  const h=Math.min(dist*0.8,70);
-  document.getElementById('pull').style.height=h+'px';
-  document.getElementById('spinner').classList.add('spin');
-  document.getElementById('label').textContent=h>40?'離して更新':'↓ 下に引っ張って更新';
-},{passive:false});
-
-scroll.addEventListener('touchend',()=>{
-  if(!pulling)return;
-  pulling=false;
-
-  if(dist<40){
-    reset(); return;
-  }
-
-  document.getElementById('label').textContent='更新中…';
-
-  setTimeout(()=>{
-    reset();
-    if(ready){
-      const s=document.getElementById('state');
-      s.textContent='受付中';
-      s.style.background='#16A34A';
-      s.style.color='white';
-
-      const b=document.getElementById('issue');
-      b.disabled=false;
-      b.style.background='#111';
-      b.style.color='white';
-
-      document.getElementById('sub').textContent='更新完了';
-    }
-  },700);
-});
-
-function reset(){
-  document.getElementById('pull').style.height='0px';
-  document.getElementById('spinner').classList.remove('spin');
-  document.getElementById('label').textContent='↓ 下に引っ張って更新';
-}
+start.onclick=()=>{if(started)return;started=true;start.disabled=true;start.textContent='待機中…';let t=WAIT;const iv=setInterval(()=>{t--;sub.textContent='受付開始まで '+t+' 秒';if(t<=0){clearInterval(iv);ready=true;sub.textContent='下に引っ張って更新';}},1000)};
+scroll.addEventListener('touchstart',e=>{if(scroll.scrollTop===0){pulling=true;startY=e.touches[0].clientY;}},{passive:true});
+scroll.addEventListener('touchmove',e=>{if(!pulling)return;dist=Math.max(0,e.touches[0].clientY-startY);if(dist>0)e.preventDefault();pull.style.height=Math.min(dist*.8,70)+'px';spinner.classList.add('spin');label.textContent=dist>40?'離して更新':'↓ 下に引っ張って更新';},{passive:false});
+scroll.addEventListener('touchend',()=>{if(!pulling)return;pulling=false;if(dist<40){reset();return;}label.textContent='更新中…';setTimeout(()=>{reset();if(ready){state.textContent='受付中';state.style.background='#111';state.style.color='#fff';sub.textContent='更新完了';issue.disabled=false;issue.style.background='#111';issue.style.color='#fff';}},700)});
+function reset(){pull.style.height='0';spinner.classList.remove('spin');label.textContent='↓ 下に引っ張って更新';}
 </script>
 </body>
 </html>
