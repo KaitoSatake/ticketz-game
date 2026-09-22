@@ -2,176 +2,130 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>整理券ゲーム</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#efefef}
-.container{max-width:390px;margin:0 auto;min-height:100vh;background:#efefef}
-.status{background:#fff;padding:14px 18px 6px;display:flex;justify-content:space-between;font-weight:700;font-size:14px}
-.header{background:#fff;text-align:center;padding:12px;font-size:22px;font-weight:800;border-bottom:1px solid #eee}
-#scroll{overflow-y:auto;height:calc(100vh - 62px)}
+html,body{
+  margin:0;
+  height:100%;
+  overscroll-behavior-y:none;
+  overflow:hidden;
+  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+  background:#efefef;
+}
+#scroll{
+  height:calc(100vh - 64px);
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+  touch-action:pan-y;
+}
 #pull{height:0;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;background:#fff;transition:height .15s}
 #spinner{width:28px;height:28px;border:3px solid #d1d5db;border-top-color:#374151;border-radius:50%}
 .spin{animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-#label{font-size:11px;color:#9ca3af;margin:4px 0 8px}
-.card{background:#fff;border-radius:18px;padding:16px;margin:16px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
-.logo{width:56px;height:56px;border-radius:50%;background:#F6E27A;display:flex;align-items:center;justify-content:center;font-weight:900}
-button{width:100%;border:none;border-radius:12px;padding:13px;font-weight:700}
-.primary{background:#2563eb;color:#fff}
-#issue{background:#d1d5db;color:#fff}
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;padding:20px}
-.box{background:#fff;border-radius:18px;padding:20px;width:320px}
-.qr{display:grid;grid-template-columns:repeat(8,1fr);gap:1px;width:180px;height:180px;margin:16px auto;background:#fff;padding:6px}
-.qr div{background:#fff}.qr .b{background:#111}
+.card{background:#fff;border-radius:16px;padding:16px;margin:16px}
+button{width:100%;padding:13px;border:none;border-radius:12px;font-weight:700}
 </style>
 </head>
 <body>
-<div class="container">
-  <div class="status">
-    <span id="clock">20:59</span>
-    <span>📶 4G 🔋85</span>
+<div style="background:#fff;padding:14px 18px 10px;font-weight:700">整理券</div>
+
+<div id="scroll">
+  <div id="pull">
+    <div id="spinner"></div>
+    <div id="label" style="font-size:11px;color:#888;margin:6px 0 8px">↓ 下に引っ張って更新</div>
   </div>
-  <div class="header">整理券</div>
 
-  <div id="scroll">
-    <div id="pull">
-      <div id="spinner"></div>
-      <div id="label">↓ 下に引っ張って更新</div>
-    </div>
-
-    <div style="background:#fff;padding:36px;text-align:center;color:#666">整理券がありません</div>
-
-    <div class="card">
-      <button id="start" class="primary">▶ ゲーム開始（10秒）</button>
-
-      <div style="display:flex;gap:12px;align-items:center;margin-top:16px">
-        <div class="logo">FZ</div>
-        <div>
-          <div style="font-weight:800">FRUITS ZIPPER</div>
-          <div style="font-size:13px">7thシングル リリイベ</div>
-        </div>
-      </div>
-
-      <div style="margin-top:14px;font-size:12px;color:#666">2026.09.27</div>
-      <div style="font-weight:800">セブンパークアリオ柏</div>
-
-      <div style="border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;margin-top:12px">
-        <div id="state" style="background:#e5e7eb;text-align:center;padding:10px;font-weight:800">受付前</div>
-
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:14px">
-          <div>
-            <div style="font-weight:700">先着配布</div>
-            <div id="sub" style="font-size:12px;color:#666">ゲーム開始待ち</div>
-          </div>
-          <div style="background:#e5e7eb;padding:4px 8px;border-radius:6px;font-size:12px;font-weight:700">先着</div>
-        </div>
-
-        <button id="issue" disabled style="margin:0 14px 14px;width:calc(100% - 28px)">先着配布</button>
-      </div>
-    </div>
+  <div class="card">
+    <button id="start" style="background:#2563eb;color:#fff">ゲーム開始（10秒）</button>
+    <div style="margin-top:16px;font-weight:700">FRUITS ZIPPER</div>
+    <div id="state" style="margin-top:12px;background:#e5e7eb;padding:10px;border-radius:10px;text-align:center;font-weight:700">受付前</div>
+    <div id="sub" style="margin-top:8px;font-size:12px;color:#666">ゲーム開始待ち</div>
+    <button id="issue" disabled style="margin-top:12px;background:#d1d5db;color:#fff">先着配布</button>
   </div>
-</div>
 
-<div id="modal" class="modal">
-  <div class="box">
-    <h3>整理券発行</h3>
-    <p>先着番号：<b>〇</b></p>
-    <button id="publish" style="background:#111;color:#fff">この内容で発行する</button>
-    <button id="cancel" style="margin-top:8px;background:#f3f4f6">キャンセル</button>
-  </div>
-</div>
-
-<div id="ticket" class="modal">
-  <div class="box" style="text-align:center">
-    <h3>整理券を発行しました</h3>
-    <div id="num" style="font-size:40px;font-weight:900">A-0001</div>
-    <div id="qr" class="qr"></div>
-    <button id="close" style="background:#111;color:#fff">閉じる</button>
-  </div>
+  <div style="height:500px"></div>
 </div>
 
 <script>
-let started=false,ready=false,startTime=0;
 const WAIT=10;
-const $=id=>document.getElementById(id);
+let ready=false,started=false,startY=0,pulling=false,dist=0,startTime=0;
+const scroll=document.getElementById('scroll');
 
-start.onclick=()=>{
- if(started) return;
- started=true;
- startTime=Date.now();
- start.disabled=true;
- start.textContent='待機中…';
- tick();
+document.getElementById('start').onclick=()=>{
+  if(started)return;
+  started=true;
+  startTime=Date.now();
+  tick();
 };
 
 function tick(){
- const t=(Date.now()-startTime)/1000;
- if(t<WAIT){
-   sub.textContent=`受付開始まで ${(WAIT-t).toFixed(1)} 秒`;
-   requestAnimationFrame(tick);
-   return;
- }
- ready=true;
- clock.textContent='21:00';
- if(state.textContent==='受付前') sub.textContent='下に引っ張って更新';
+  const t=(Date.now()-startTime)/1000;
+  if(t<WAIT){
+    document.getElementById('sub').textContent=`受付開始まで ${(WAIT-t).toFixed(1)} 秒`;
+    requestAnimationFrame(tick);
+    return;
+  }
+  ready=true;
+  document.getElementById('sub').textContent='下に引っ張って更新';
 }
 
-let pulling=false,startY=0,dist=0;
 scroll.addEventListener('touchstart',e=>{
- if(scroll.scrollTop===0){pulling=true;startY=e.touches[0].clientY;dist=0;}
+  if(scroll.scrollTop===0){
+    pulling=true;
+    startY=e.touches[0].clientY;
+  }
 },{passive:true});
 
 scroll.addEventListener('touchmove',e=>{
- if(!pulling) return;
- dist=Math.max(0,e.touches[0].clientY-startY);
- if(dist>0) e.preventDefault();
- pull.style.height=Math.min(dist*0.8,70)+'px';
- spinner.classList.add('spin');
- label.textContent=dist>40?'離して更新':'↓ 下に引っ張って更新';
+  if(!pulling)return;
+  dist=Math.max(0,e.touches[0].clientY-startY);
+
+  if(scroll.scrollTop===0 && dist>0){
+    e.preventDefault();
+  }
+
+  const h=Math.min(dist*0.8,70);
+  document.getElementById('pull').style.height=h+'px';
+  document.getElementById('spinner').classList.add('spin');
+  document.getElementById('label').textContent=h>40?'離して更新':'↓ 下に引っ張って更新';
 },{passive:false});
 
 scroll.addEventListener('touchend',()=>{
- if(!pulling) return;
- pulling=false;
- if(dist<40){reset();return;}
- label.textContent='更新中…';
- setTimeout(()=>{
-   reset();
-   if(ready){
-     state.textContent='受付中';
-     state.style.background='#16A34A';
-     state.style.color='white';
-     sub.textContent='更新完了';
-     issue.disabled=false;
-     issue.style.background='#111';
-     issue.style.color='white';
-   }
- },700);
+  if(!pulling)return;
+  pulling=false;
+
+  if(dist<40){
+    reset(); return;
+  }
+
+  document.getElementById('label').textContent='更新中…';
+
+  setTimeout(()=>{
+    reset();
+    if(ready){
+      const s=document.getElementById('state');
+      s.textContent='受付中';
+      s.style.background='#16A34A';
+      s.style.color='white';
+
+      const b=document.getElementById('issue');
+      b.disabled=false;
+      b.style.background='#111';
+      b.style.color='white';
+
+      document.getElementById('sub').textContent='更新完了';
+    }
+  },700);
 });
 
 function reset(){
- pull.style.height='0';
- spinner.classList.remove('spin');
- label.textContent='↓ 下に引っ張って更新';
+  document.getElementById('pull').style.height='0px';
+  document.getElementById('spinner').classList.remove('spin');
+  document.getElementById('label').textContent='↓ 下に引っ張って更新';
 }
-
-issue.onclick=()=>modal.style.display='flex';
-cancel.onclick=()=>modal.style.display='none';
-publish.onclick=()=>{
- modal.style.display='none';
- const n=Math.floor(Math.random()*1500)+1;
- num.textContent='A-'+String(n).padStart(4,'0');
- qr.innerHTML='';
- for(let i=0;i<64;i++){
-   const d=document.createElement('div');
-   if(Math.random()>.5) d.className='b';
-   qr.appendChild(d);
- }
- ticket.style.display='flex';
-};
-close.onclick=()=>ticket.style.display='none';
 </script>
 </body>
 </html>
